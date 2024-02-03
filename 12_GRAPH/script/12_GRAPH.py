@@ -1,29 +1,36 @@
 import os
 print(os.getcwd())
 
-resource = "resource/12_GRAPH.txt"
+resource = "../resource/rosalind_grph.txt"
 
-def data_reader(filepath):
+def data_reader(file_path):
     """
-    Reads the .txt file at the given file path and returns its content as a dictionary.
-    Every two lines in the file are considered a key-value pair.
+    Reads a FASTA format file and returns its content as a dictionary.
+    Each '>' character starts a new key, with following lines as its value until the next '>'.
 
     Args:
-    filepath (str): The path of the file to be read
+    file_path (str): The path of the file to be read.
 
     Returns:
-    dict: A dictionary containing the key-value pairs read from the file
-
+    dict: A dictionary containing the key-value pairs from the file, where the key is the line starting with '>'
+    and the value is a concatenation of the following lines until the next key.
     """
-    dictionary = {}  # Compose a blank dict
-    with open(filepath, 'r') as file:
-        while True:
-            key = file.readline().strip()[1:]  # Read the key and delete the spaces
-            value = file.readline().strip()  # Read the value and delete the spaces
-            if not key or not value:  # If key or value are blank, code exits
-                break
-            dictionary[key] = value  # Add the data to the dictionary
-    return dictionary
+    with open(file_path, 'r') as file:
+        sequences = {}
+        key = None
+        for line in file:
+            line = line.strip()
+            if line.startswith('>'):
+                key = line[1:]  # Remove '>' and use the rest as key
+                sequences[key] = []  # Initialize a list to hold the sequence lines
+            elif key:
+                sequences[key].append(line)  # Add this line to the list of lines for the current key
+
+        # Concatenate lines for each key to form single string values
+        for key in sequences:
+            sequences[key] = ''.join(sequences[key])
+
+    return sequences
 
 def overlap_finder(seq1, seq2, k):
     """Checks if there is an overlap of a specific length between two sequences."""
@@ -31,17 +38,16 @@ def overlap_finder(seq1, seq2, k):
 
 def find_all_overlaps(dictionary, k):
     """Finds all overlaps of a specific length 'k' among the items in the dictionary and prints the keys of overlapping pairs."""
-    keys = list(dictionary.keys())  # Convert dictionary keys to a list for indexed access
-    n = len(keys)  # Number of items in the dictionary
+    keys = list(dictionary.keys())
+    n = len(keys)
 
     for i in range(n):
-        for j in range(i + 1, n):  # Compare each item with every other item
-            seq1 = dictionary[keys[i]]
-            seq2 = dictionary[keys[j]]
-            if overlap_finder(seq1, seq2, k):  # Check for overlap from seq1 to seq2
-                print(f"{keys[i]} and {keys[j]}")
-            if overlap_finder(seq2, seq1, k):  # Check for overlap from seq2 to seq1
-                print(f"{keys[j]} {keys[i]}")
+        for j in range(n):
+            if i != j:  # Prevent comparing the sequence with itself
+                seq1 = dictionary[keys[i]]
+                seq2 = dictionary[keys[j]]
+                if overlap_finder(seq1, seq2, k):
+                    print(f"{keys[i]} {keys[j]}")
 
 # Example Dictionary
 dictionary = data_reader(resource)
